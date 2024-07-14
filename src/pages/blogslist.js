@@ -1,47 +1,53 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Table from 'react-bootstrap/Table';
-import { collection, doc, getDocs, getDoc } from "firebase/firestore";
+import { collection, doc, getDocs, deleteDoc } from "firebase/firestore";
 import { store } from '../firebase'
 import { Button, Container } from "react-bootstrap";
 
 //const Blogslist = collection(db,'blogs');
-// const querySnapshot = await getDocs(Blogslist);
+
 
 const BlogslistView = () => {
 
   const [blogs, Setblogs] = useState([]);
 
+  const fetchData = async () => {
+    try {
+      const collectionRef = collection(store, 'blogs');
+      const snapshot = await getDocs(collectionRef);
+
+      const data = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+
+      console.log(data, "data")
+      Setblogs(data)
+      
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    }
+  };
+  
   useEffect(() => {
     // Fetch data from a Firestore collection
-    const fetchData = async () => {
-      try {
-        const collectionRef = collection(store, 'blogs');
-        const snapshot = await getDocs(collectionRef);
-
-        const data = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data()
-        }));
-
-        console.log(data, "data")
-        Setblogs(data)
-        
-      } catch (error) {
-        console.error('Error fetching data:', error);
-      }
-    };
+    
     fetchData()
   }, []);
 
-  // const DeleteBlog = (id)=> {
-  //     querySnapshot.doc(id).delete().then(() => {
-  //         alert("Document successfully deleted!");
-  //     }).catch((error) => {
-  //         console.error("Error removing document: ", error);
-  //     });
-  // };
-  console.log(blogs, "blogs blogs")
+  const handleDelete = async(id)=> {  
+    try {
+      const docRef = doc(store, 'blogs', id);
+      await deleteDoc(docRef);
+      fetchData()
+      console.log("Document successfully deleted!");
+    } catch (error) {
+      console.error("Error removing document: ", error);
+    }
+
+  };
+
   return (
     <Container fluid className="pt-4">
       <Table striped bordered hover>
@@ -76,7 +82,7 @@ const BlogslistView = () => {
                   <td><p>{blog.item_name}</p></td>
                   <td width={180}>
                     <Button className="mx-3" title={blog.timestamp}>Edit</Button>
-                    <Button>Delete</Button>
+                    <Button onClick={()=>handleDelete(blog.id)}>Delete</Button>
                   </td>
                 </tr>
               )
